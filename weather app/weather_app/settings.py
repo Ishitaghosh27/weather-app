@@ -1,0 +1,3 @@
+# OpenWeather API Key
+OPENWEATHER_API_KEY = "e534d10656f7ff9d97ea878f4ce78710"
+

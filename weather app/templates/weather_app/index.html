@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% load static %}{% static 'css/style.css' %}">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Suggestions CSS -->
+    <style>
+        .suggestions-container {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 0 0 15px 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none; /* initially hidden */
+        }
+        .suggestion-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s ease;
+            display: flex;
+            align-items: center;
+        }
+        .suggestion-item:hover {
+            background-color: #eee;
+        }
+    </style>
+</head>
+<body>
+    <!-- Main Container -->
+    <div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center weather-bg">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-8 col-lg-6">
+
+                    <!-- Header -->
+                    <div class="text-center mb-4">
+                        <h1 class="display-4 text-white fw-bold">
+                            <i class="fas fa-cloud-sun me-3"></i>Weather App
+                        </h1>
+                        <p class="lead text-white-50">Get real-time weather information for any city</p>
+                    </div>
+
+                    <!-- Search Form -->
+                    <div class="card shadow-lg border-0">
+                        <div class="card-body p-4">
+                            <form method="POST" class="mb-0">
+                                {% csrf_token %}
+                                <div class="input-group input-group-lg position-relative">
+                                    <input type="text" 
+                                           class="form-control" 
+                                           name="city" 
+                                           id="cityInput"
+                                           placeholder="Enter city name..." 
+                                           value="{{ request.POST.city|default:'' }}"
+                                           autocomplete="off"
+                                           required>
+                                    <button class="btn btn-primary" type="submit">
+                                        <i class="fas fa-search me-2"></i>Search
+                                    </button>
+                                    <!-- Autocomplete suggestions -->
+                                    <div id="suggestions" class="suggestions-container"></div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Error Message -->
+                    {% if error_message %}
+                    <div class="alert alert-danger mt-4" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        {{ error_message }}
+                    </div>
+                    {% endif %}
+
+                    <!-- Weather Data Display -->
+                    {% if weather_data %}
+                    <div class="card shadow-lg border-0 mt-4 weather-card">
+                        <div class="card-body p-4">
+                            {% if weather_data.is_mock %}
+                            <div class="alert alert-info mb-3" role="alert">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Demo Mode:</strong> This is sample data. Get real weather data by adding your OpenWeatherMap API key.
+                            </div>
+                            {% endif %}
+
+                            <!-- City and Country -->
+                            <div class="text-center mb-4">
+                                <h2 class="h3 mb-1">{{ weather_data.city }}, {{ weather_data.country }}</h2>
+                                <p class="text-muted mb-0">{{ weather_data.description }}</p>
+                            </div>
+
+                            <!-- Weather Info -->
+                            <div class="row align-items-center mb-4">
+                                <div class="col-6 text-center">
+                                    <img src="http://openweathermap.org/img/wn/{{ weather_data.icon }}@2x.png" 
+                                         alt="{{ weather_data.description }}" class="weather-icon">
+                                </div>
+                                <div class="col-6">
+                                    <div class="temperature-display">
+                                        <span class="temperature">{{ weather_data.temperature }}</span>
+                                        <span class="temperature-unit">°C</span>
+                                    </div>
+                                    <p class="text-muted mb-0">Feels like {{ weather_data.feels_like }}°C</p>
+                                </div>
+                            </div>
+
+                            <!-- Additional Details -->
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <div class="weather-detail">
+                                        <i class="fas fa-tint text-primary mb-2"></i>
+                                        <h6 class="mb-1">Humidity</h6>
+                                        <p class="mb-0">{{ weather_data.humidity }}%</p>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="weather-detail">
+                                        <i class="fas fa-wind text-primary mb-2"></i>
+                                        <h6 class="mb-1">Wind Speed</h6>
+                                        <p class="mb-0">{{ weather_data.wind_speed }} m/s</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Map Links -->
+                            <div class="text-center mt-4">
+                                <div class="btn-group" role="group">
+                                    <a href="https://www.google.com/maps/search/{{ weather_data.city }},{{ weather_data.country }}" 
+                                       target="_blank" 
+                                       class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-map-marker-alt me-2"></i>Google Maps
+                                    </a>
+                                    <a href="https://earth.google.com/web/search/{{ weather_data.city }},{{ weather_data.country }}" 
+                                       target="_blank" 
+                                       class="btn btn-outline-success btn-sm">
+                                        <i class="fas fa-globe me-2"></i>Google Earth
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Footer -->
+                    <div class="text-center mt-4">
+                        <p class="text-white-50 small">
+                            Powered by <a href="https://openweathermap.org/" class="text-white" target="_blank">OpenWeatherMap API</a>
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Custom JS for autocomplete -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const input = document.getElementById('cityInput');
+        const suggestionsBox = document.getElementById('suggestions');
+
+        input.addEventListener('input', function () {
+            const query = this.value;
+            if (query.length < 2) {
+                suggestionsBox.innerHTML = "";
+                suggestionsBox.style.display = "none";
+                return;
+            }
+
+            fetch("{% url 'city_suggestions' %}?q=" + query)
+            .then(response => response.json())
+            .then(data => {
+                suggestionsBox.innerHTML = "";
+                if (!Array.isArray(data) || data.length === 0) {
+                    suggestionsBox.style.display = "none";
+                    return;
+                }
+
+                data.forEach(city => {
+                    const div = document.createElement('div');
+                    div.textContent = city;
+                    div.classList.add('suggestion-item');
+                    div.onclick = () => {
+                        input.value = city;
+                        suggestionsBox.innerHTML = "";
+                        suggestionsBox.style.display = "none";
+                    };
+                    suggestionsBox.appendChild(div);
+                });
+
+                suggestionsBox.style.display = "block";
+            })
+            .catch(err => console.error(err));
+        });
+    });
+    </script>
+</body>
+</html>
